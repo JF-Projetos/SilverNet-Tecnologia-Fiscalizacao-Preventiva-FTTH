@@ -1,0 +1,2161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SilverNet Fiscal — Ficha Fiscal Técnica</title>
+<meta name="theme-color" content="#E50012">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700;800&family=Barlow:wght@300;400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous">
+
+<!-- jsPDF + autotable para geração de PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+/* ========================================================
+   VARIÁVEIS DE TEMA — Escuro (padrão) e Claro
+   ======================================================== */
+:root {
+  --red: #E50012;
+  --red-dark: #B0000E;
+  --red-glow: rgba(229, 0, 18, 0.25);
+  --bg: #030303;
+  --s1: #0A0A0A;
+  --s2: #111111;
+  --s3: #1A1A1A;
+  --s4: #222222;
+  --border: #2A2A2A;
+  --border-light: #333333;
+  --text: #E8E8E8;
+  --text-muted: #888888;
+  --text-dim: #555555;
+  --green: #00C853;
+  --yellow: #FFD600;
+  --blue: #2979FF;
+  --font-condensed: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+  --font-mono: 'Roboto Mono', monospace;
+}
+
+html[data-theme="light"] {
+  --red: #E50012;
+  --red-dark: #B0000E;
+  --red-glow: rgba(229, 0, 18, 0.15);
+  --bg: #FFFFFF;
+  --s1: #F5F5F5;
+  --s2: #EEEEEE;
+  --s3: #E8E8E8;
+  --s4: #DEDEDE;
+  --border: #D0D0D0;
+  --border-light: #C0C0C0;
+  --text: #1A1A1A;
+  --text-muted: #666666;
+  --text-dim: #999999;
+  --green: #00A844;
+  --yellow: #FFC400;
+  --blue: #1976D2;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  height: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes gpulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ========================================================
+   THEME TOGGLE
+   ======================================================== */
+.themeToggle {
+  position: fixed;
+  top: 14px;
+  right: 16px;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.themeToggle:hover {
+  background: var(--s3);
+  border-color: var(--border-light);
+  transform: scale(1.05);
+}
+.themeToggle:active { transform: scale(0.98); }
+
+/* ========================================================
+   PAGE / VIEW SWITCHING
+   ======================================================== */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ========================================================
+   HOME PAGE
+   ======================================================== */
+.home-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  background: var(--s1);
+}
+.home-logo { display: flex; flex-direction: column; line-height: 1; }
+.home-logoText {
+  font-family: var(--font-condensed);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--text);
+  text-transform: uppercase;
+}
+.home-logoAccent { color: var(--red); }
+.home-logoSub {
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 6px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.home-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  gap: 64px;
+}
+.home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+  animation: fadeUp 0.6s ease both;
+}
+.home-title {
+  font-family: var(--font-condensed);
+  font-size: clamp(36px, 6vw, 64px);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.1;
+}
+.home-title span { color: var(--red); }
+.home-subtitle {
+  font-size: 16px;
+  color: var(--text-muted);
+  max-width: 480px;
+  line-height: 1.7;
+}
+.home-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 14px 32px;
+  background: var(--red);
+  color: #fff;
+  font-family: var(--font-condensed);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 4px;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px var(--red-glow);
+}
+.home-cta:hover {
+  background: var(--red-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px var(--red-glow);
+}
+.home-features {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeUp 0.6s 0.15s ease both;
+}
+.home-feature {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px 28px;
+  width: 200px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.home-feature:hover { border-color: var(--border-light); transform: translateY(-3px); }
+.home-feature i { font-size: 28px; color: var(--red); }
+.home-feature h3 {
+  font-family: var(--font-condensed);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.home-feature p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+@media (max-width: 600px) {
+  .home-header { padding: 0 16px; }
+  .home-main { padding: 48px 16px; gap: 48px; }
+  .home-features { gap: 16px; }
+  .home-feature { width: 150px; padding: 20px 16px; }
+}
+
+/* ========================================================
+   FISCAL FORM
+   ======================================================== */
+.fiscal-container { min-height: 100vh; background: var(--bg); padding-bottom: 80px; }
+
+.gpsBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  background: var(--s1);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  min-height: 36px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.gpsBar:hover { background: var(--s2); }
+.gpsIcon { color: var(--red); font-size: 12px; flex-shrink: 0; }
+.gpsIcon.loading { animation: spin 1s linear infinite; }
+.gpsPulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--green); flex-shrink: 0;
+  animation: gpulse 2s ease-in-out infinite;
+}
+.gpsText { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gpsCoords { color: var(--text-dim); flex-shrink: 0; font-size: 10px; }
+
+.pageHeader {
+  padding: 24px 20px 16px;
+  background: var(--s1);
+  border-bottom: 2px solid var(--red);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.headerLeft { display: flex; flex-direction: column; }
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  margin-bottom: 14px;
+  transition: border-color 0.15s, color 0.15s;
+  align-self: flex-start;
+}
+.backBtn:hover { border-color: var(--border-light); color: var(--text); }
+.logoRow { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.logoText {
+  font-family: var(--font-condensed);
+  font-size: 28px; font-weight: 800; letter-spacing: 4px;
+  color: var(--text); text-transform: uppercase;
+}
+.logoAccent { color: var(--red); }
+.logoSub {
+  font-family: var(--font-condensed);
+  font-size: 10px; letter-spacing: 5px; color: var(--text-muted);
+  text-transform: uppercase;
+}
+.docTitle {
+  font-family: var(--font-condensed);
+  font-size: 13px; font-weight: 500; letter-spacing: 3px;
+  color: var(--text-dim); text-transform: uppercase; margin-top: 4px;
+}
+
+.section {
+  margin: 20px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--s1);
+  animation: fadeUp 0.4s ease both;
+}
+.sectionHeader {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--s2);
+  border-radius: 6px 6px 0 0;
+}
+.sectionBadge {
+  font-family: var(--font-condensed);
+  font-size: 10px; font-weight: 600; letter-spacing: 2px;
+  color: var(--text-dim); background: var(--s3);
+  padding: 2px 8px; border-radius: 3px; text-transform: uppercase;
+  white-space: nowrap;
+}
+.sectionTitle {
+  font-family: var(--font-condensed);
+  font-size: 14px; font-weight: 600; letter-spacing: 2px;
+  color: var(--text); text-transform: uppercase;
+}
+.sectionIcon { color: var(--red); font-size: 13px; margin-left: auto; }
+.sectionBody { padding: 16px; }
+
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.formGroup { display: flex; flex-direction: column; gap: 5px; }
+.formGroup.wide { grid-column: 1 / -1; }
+.formLabel {
+  font-family: var(--font-condensed);
+  font-size: 11px; font-weight: 600; letter-spacing: 2px;
+  color: var(--text-muted); text-transform: uppercase;
+}
+.formInput {
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+.formInput:focus { border-color: var(--red); }
+.formInput::placeholder { color: var(--text-dim); }
+
+.checklistItems { display: flex; flex-direction: column; gap: 6px; }
+.checklistItem {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: border-color 0.15s;
+}
+.checklistItem.conforming { border-left: 3px solid var(--green); }
+.checklistItem.nonConforming { border-left: 3px solid var(--red); }
+.checklistItem.notApplicable { border-left: 3px solid var(--text-dim); }
+.checklistNum { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); min-width: 24px; }
+.checklistLabel { flex: 1; font-size: 13px; color: var(--text); }
+.checklistTooltipBtn {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 12px; padding: 2px 4px; line-height: 1;
+  transition: color 0.15s; flex-shrink: 0;
+}
+.checklistTooltipBtn:hover { color: var(--blue); }
+.checklistBtns { display: flex; gap: 4px; flex-shrink: 0; }
+.btn {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-condensed);
+  font-size: 11px; font-weight: 600; letter-spacing: 1px;
+  background: var(--s3); color: var(--text-muted);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  text-transform: uppercase;
+}
+.btn:hover { border-color: var(--border-light); color: var(--text); }
+.btn.simActive { background: rgba(0, 200, 83, 0.15); border-color: var(--green); color: var(--green); }
+.btn.naoActive { background: rgba(229, 0, 18, 0.15); border-color: var(--red); color: var(--red); }
+.btn.naActive { background: rgba(85, 85, 85, 0.25); border-color: var(--text-dim); color: var(--text-muted); }
+
+.scoreWrapper { margin-top: 16px; padding: 12px; background: var(--s2); border: 1px solid var(--border); border-radius: 4px; }
+.scoreRow { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.scoreLabel {
+  font-family: var(--font-condensed); font-size: 11px; font-weight: 600;
+  letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;
+}
+.scoreValue { font-family: var(--font-mono); font-size: 18px; font-weight: 500; }
+.scoreValue.high { color: var(--green); }
+.scoreValue.mid { color: var(--yellow); }
+.scoreValue.low { color: var(--red); }
+.scoreBar { height: 6px; background: var(--s3); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+.scoreBarFill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+.scoreBarFill.high { background: var(--green); }
+.scoreBarFill.mid { background: var(--yellow); }
+.scoreBarFill.low { background: var(--red); }
+.scorePills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 10px; border: 1px solid; }
+.pill.sim { color: var(--green); border-color: rgba(0, 200, 83, 0.3); background: rgba(0, 200, 83, 0.08); }
+.pill.nao { color: var(--red); border-color: rgba(229, 0, 18, 0.3); background: rgba(229, 0, 18, 0.08); }
+.pill.na { color: var(--text-dim); border-color: var(--border); background: var(--s3); }
+
+.obsTextarea {
+  width: 100%;
+  background: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 120px;
+  outline: none;
+  transition: border-color 0.2s;
+  line-height: 1.6;
+}
+.obsTextarea:focus { border-color: var(--red); }
+.obsTextarea::placeholder { color: var(--text-dim); }
+.charCounter { text-align: right; font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 5px; }
+.charCounter.warn { color: var(--yellow); }
+.charCounter.limit { color: var(--red); }
+
+.photoActions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.photoBtnPrimary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; background: var(--red); color: #fff;
+  font-family: var(--font-condensed); font-size: 12px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase; border: none;
+  border-radius: 3px; transition: background 0.15s;
+}
+.photoBtnPrimary:hover { background: var(--red-dark); }
+.photoBtnPrimary:disabled { opacity: 0.5; pointer-events: none; }
+.photoBtnSecondary {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; background: var(--s3); color: var(--text);
+  font-family: var(--font-condensed); font-size: 12px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 3px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.photoBtnSecondary:hover { border-color: var(--border-light); background: var(--s4); }
+.photoBtnSecondary:disabled { opacity: 0.5; pointer-events: none; }
+.photoCount { margin-left: auto; align-self: center; font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); }
+.photoGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.photoItem { display: flex; flex-direction: column; gap: 5px; overflow: visible; }
+.photoCommentInput {
+  -webkit-appearance: none; appearance: none; display: block; width: 100%;
+  background: var(--s3); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text); font-family: var(--font-body); font-size: 11px;
+  padding: 5px 8px; resize: none; min-height: 44px; outline: none;
+  transition: border-color 0.2s; line-height: 1.5; box-sizing: border-box;
+}
+.photoCommentInput:focus { border-color: var(--red); }
+.photoCommentInput::placeholder { color: var(--text-dim); }
+.photoThumb {
+  position: relative; width: 100%; padding-top: 75%;
+  border-radius: 4px; overflow: hidden; border: 1px solid var(--border);
+  cursor: pointer; background: var(--s3); transition: border-color 0.15s;
+}
+.photoThumb:hover { border-color: var(--border-light); }
+.photoThumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.photoOverlay {
+  position: absolute; inset: 0; background: rgba(0, 0, 0, 0.65);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  opacity: 0; transition: opacity 0.15s;
+}
+.photoThumb:hover .photoOverlay { opacity: 1; }
+.photoOverlayBtn {
+  background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff; border-radius: 3px; padding: 5px 7px; font-size: 12px;
+  line-height: 1; transition: background 0.15s;
+}
+.photoOverlayBtn:hover { background: rgba(229, 0, 18, 0.6); }
+.photoCameraTag {
+  position: absolute; bottom: 4px; left: 4px;
+  background: rgba(229, 0, 18, 0.85); color: #fff; font-size: 8px;
+  padding: 1px 4px; border-radius: 2px; pointer-events: none;
+  font-family: var(--font-mono);
+}
+.emptyPhotos {
+  text-align: center; padding: 32px 16px; color: var(--text-dim);
+  font-size: 13px; border: 1px dashed var(--border); border-radius: 4px;
+}
+
+.ratingActivate, .signatureActivate {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 24px; text-align: center;
+}
+.ratingActivate p, .signatureActivate p { font-size: 13px; color: var(--text-muted); max-width: 340px; }
+.btnActivate {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 24px; background: transparent; color: var(--red);
+  font-family: var(--font-condensed); font-size: 13px; font-weight: 600;
+  letter-spacing: 2px; text-transform: uppercase;
+  border: 1px solid var(--red); border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+.btnActivate:hover { background: rgba(229, 0, 18, 0.12); }
+.ratingGroups { display: flex; flex-direction: column; gap: 16px; }
+.ratingGroup { background: var(--s2); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
+.ratingGroupTitle {
+  font-family: var(--font-condensed); font-size: 12px; font-weight: 600;
+  letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;
+}
+.stars { display: flex; gap: 4px; flex-wrap: wrap; }
+.star {
+  font-size: 34px; cursor: pointer; transition: color 0.1s, transform 0.1s;
+  user-select: none; color: var(--s4); line-height: 1;
+}
+.star.filled { color: var(--yellow); }
+.star.hover { color: rgba(255, 214, 0, 0.6); }
+.star:hover { transform: scale(1.2); }
+.ratingVal { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+.ratingVal span { color: var(--yellow); font-weight: 500; }
+
+.signatureWrapper { display: flex; flex-direction: column; gap: 10px; }
+.signatureCanvas {
+  width: 100%; height: 180px; background: var(--s3);
+  border: 1px solid var(--border); border-radius: 4px; cursor: crosshair;
+  display: block; touch-action: none;
+}
+.signatureCanvas.confirmed { border-color: var(--green); cursor: default; }
+.signatureBtns { display: flex; gap: 8px; flex-wrap: wrap; }
+.btnClear {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: var(--s3); color: var(--text-muted);
+  font-family: var(--font-condensed); font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 3px; transition: border-color 0.15s;
+}
+.btnClear:hover { border-color: var(--border-light); color: var(--text); }
+.btnConfirm {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: rgba(0, 200, 83, 0.12); color: var(--green);
+  font-family: var(--font-condensed); font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  border: 1px solid rgba(0, 200, 83, 0.35); border-radius: 3px; transition: background 0.15s;
+}
+.btnConfirm:hover { background: rgba(0, 200, 83, 0.2); }
+.signatureConfirmedBadge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-condensed); font-size: 11px; font-weight: 600;
+  letter-spacing: 1.5px; color: var(--green); text-transform: uppercase;
+}
+
+.pdfSection { margin: 24px 16px 0; text-align: center; }
+.btnPdf {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 36px; background: var(--red); color: #fff;
+  font-family: var(--font-condensed); font-size: 16px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase; border: none;
+  border-radius: 4px; transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+  box-shadow: 0 4px 20px var(--red-glow);
+}
+.btnPdf:hover { background: var(--red-dark); box-shadow: 0 6px 28px var(--red-glow); transform: translateY(-1px); }
+.btnPdf:active { transform: translateY(0); }
+.btnPdf:disabled { opacity: 0.6; pointer-events: none; }
+
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px; border-radius: 6px; font-size: 13px;
+  font-family: var(--font-body); max-width: 320px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: toastIn 0.3s ease both; border-left: 3px solid;
+}
+.toast.success { background: #0d1a0f; border-color: var(--green); color: var(--green); }
+.toast.error { background: #1a0505; border-color: var(--red); color: #ff6b6b; }
+.toast.info { background: #05101a; border-color: var(--blue); color: #64b5f6; }
+html[data-theme="light"] .toast.success { background: #e8f8ec; }
+html[data-theme="light"] .toast.error { background: #fbe9e9; color: #c62828; }
+html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
+
+.tooltip {
+  position: fixed; z-index: 10000; background: var(--s4);
+  border: 1px solid var(--border-light); border-radius: 4px;
+  padding: 8px 12px; max-width: 260px; font-size: 12px; color: var(--text);
+  line-height: 1.55; pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.lightboxOverlay {
+  position: fixed; inset: 0; z-index: 9998; background: rgba(0, 0, 0, 0.92);
+  display: flex; align-items: center; justify-content: center; animation: fadeUp 0.2s ease;
+}
+.lightboxContent {
+  position: relative; max-width: min(90vw, 900px); max-height: 90vh;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.lightboxImg { max-width: 100%; max-height: 80vh; border-radius: 4px; object-fit: contain; }
+.lightboxNav { display: flex; align-items: center; gap: 16px; }
+.lightboxNavBtn {
+  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff; border-radius: 3px; padding: 8px 14px; font-size: 14px; transition: background 0.15s;
+}
+.lightboxNavBtn:hover { background: rgba(255, 255, 255, 0.2); }
+.lightboxNavBtn:disabled { opacity: 0.3; pointer-events: none; }
+.lightboxClose {
+  position: absolute; top: -40px; right: 0; background: none; border: none;
+  color: rgba(255,255,255,0.7); font-size: 22px; line-height: 1; padding: 4px 8px; transition: color 0.15s;
+}
+.lightboxClose:hover { color: #fff; }
+.lightboxIndex { font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.5); }
+
+@media (max-width: 600px) {
+  .section { margin: 12px 8px; }
+  .sectionBody { padding: 12px; }
+  .formGrid { grid-template-columns: 1fr; }
+  .formGroup.wide { grid-column: 1; }
+  .photoActions { gap: 6px; }
+  .photoGrid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+  .stars { gap: 3px; }
+  .star { font-size: 28px; }
+  .btnPdf { padding: 12px 24px; font-size: 14px; }
+  .toast { right: 12px; bottom: 12px; max-width: calc(100vw - 24px); }
+  .themeToggle { top: 10px; right: 10px; width: 38px; height: 38px; font-size: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== THEME TOGGLE (global) ===================== -->
+<button class="themeToggle" id="themeToggleBtn" title="Alternar tema" aria-label="Alternar tema">
+  <i class="fa-solid fa-sun" id="themeIcon"></i>
+</button>
+
+<!-- ===================== HOME VIEW ===================== -->
+<div class="view active" id="view-home">
+  <div class="home-container">
+    <header class="home-header">
+      <div class="home-logo">
+        <span class="home-logoText">SILVER<span class="home-logoAccent">NET</span></span>
+        <span class="home-logoSub">Tecnologia</span>
+      </div>
+    </header>
+    <main class="home-main">
+      <div class="home-hero">
+        <h1 class="home-title">Ficha Fiscal <span>Técnica</span></h1>
+        <p class="home-subtitle">Sistema de vistoria e controle de qualidade para infraestrutura de fibra ótica da SilverNet Tecnologia</p>
+        <button class="home-cta" id="btnIniciarVistoria" type="button">
+          <i class="fa-solid fa-clipboard-check"></i> Iniciar Vistoria
+        </button>
+      </div>
+      <div class="home-features">
+        <div class="home-feature">
+          <i class="fa-solid fa-list-check"></i>
+          <h3>16 Itens de Verificação</h3>
+          <p>Checklist completo com pontuação de conformidade</p>
+        </div>
+        <div class="home-feature">
+          <i class="fa-solid fa-camera"></i>
+          <h3>Registro Fotográfico</h3>
+          <p>Captura com overlay de geolocalização e horário</p>
+        </div>
+        <div class="home-feature">
+          <i class="fa-solid fa-star"></i>
+          <h3>Avaliação 1–10</h3>
+          <p>3 grupos de avaliação com sistema de estrelas</p>
+        </div>
+        <div class="home-feature">
+          <i class="fa-solid fa-file-pdf"></i>
+          <h3>Relatório PDF</h3>
+          <p>Exportação completa com assinatura digital</p>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ===================== FISCAL VIEW ===================== -->
+<div class="view" id="view-fiscal">
+  <div class="fiscal-container">
+
+    <!-- GPS Bar -->
+    <div class="gpsBar" id="gpsBar" title="Clique para obter localização GPS">
+      <i class="fa-solid fa-location-dot gpsIcon" id="gpsIcon"></i>
+      <span class="gpsPulse" id="gpsPulse"></span>
+      <span class="gpsText" id="gpsText">Clique para obter localização</span>
+      <span class="gpsCoords" id="gpsCoords" style="display:none;"></span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="pageHeader">
+      <div class="headerLeft">
+        <button class="backBtn" id="btnVoltarHome" type="button">
+          <i class="fa-solid fa-arrow-left"></i> Voltar
+        </button>
+        <div class="logoRow">
+          <span class="logoText">SILVER<span class="logoAccent">NET</span></span>
+          <span class="logoSub">Tecnologia</span>
+        </div>
+        <div class="docTitle">Ficha Fiscal Técnica</div>
+      </div>
+    </div>
+
+    <!-- SECTION 01: Visit Data -->
+    <div class="section">
+      <div class="sectionHeader">
+        <span class="sectionBadge">01/06</span>
+        <span class="sectionTitle">Dados da Visita</span>
+        <i class="fa-solid fa-id-card sectionIcon"></i>
+      </div>
+      <div class="sectionBody">
+        <div class="formGrid">
+          <div class="formGroup wide">
+            <label class="formLabel">Nome do Cliente</label>
+            <input class="formInput" type="text" id="clientName" placeholder="Nome do cliente ou empresa">
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Técnico Responsável</label>
+            <input class="formInput" type="text" id="technicianName" list="technicians-list" placeholder="Nome do técnico">
+            <datalist id="technicians-list"></datalist>
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Fiscal / Inspetor</label>
+            <input class="formInput" type="text" id="fiscalName" placeholder="Nome do fiscal">
+          </div>
+          <div class="formGroup">
+            <label class="formLabel">Data da Visita</label>
+            <input class="formInput" type="date" id="visitDate">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 02: Checklist -->
+    <div class="section">
+      <div class="sectionHeader">
+        <span class="sectionBadge">02/06</span>
+        <span class="sectionTitle">Checklist de Conformidade</span>
+        <i class="fa-solid fa-list-check sectionIcon"></i>
+      </div>
+      <div class="sectionBody">
+        <div class="checklistItems" id="checklistItems"></div>
+
+        <div class="scoreWrapper">
+          <div class="scoreRow">
+            <span class="scoreLabel">Índice de Conformidade</span>
+            <span class="scoreValue" id="scoreValue">0%</span>
+          </div>
+          <div class="scoreBar">
+            <div class="scoreBarFill" id="scoreBarFill" style="width:0%;"></div>
+          </div>
+          <div class="scorePills">
+            <span class="pill sim">✓ Sim: <span id="countSim">0</span></span>
+            <span class="pill nao">✗ Não: <span id="countNao">0</span></span>
+            <span class="pill na">N/A: <span id="countNa">0</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 03: Observations -->
+    <div class="section">
+      <div class="sectionHeader">
+        <span class="sectionBadge">03/06</span>
+        <span class="sectionTitle">Observações</span>
+        <i class="fa-solid fa-pen-to-square sectionIcon"></i>
+      </div>
+      <div class="sectionBody">
+        <textarea class="obsTextarea" id="observations" placeholder="Registre aqui observações, anomalias, recomendações ou detalhes técnicos da visita..." maxlength="3000" rows="5"></textarea>
+        <div class="charCounter" id="charCounter">0 / 3000</div>
+      </div>
+    </div>
+
+    <!-- SECTION 04: Photos -->
+    <div class="section">
+      <div class="sectionHeader">
+        <span class="sectionBadge">04/06</span>
+        <span class="sectionTitle">Registro Fotográfico</span>
+        <i class="fa-solid fa-camera sectionIcon"></i>
+      </div>
+      <div class="sectionBody">
+        <div class="photoActions">
+          <button class="photoBtnPrimary" id="btnCapturarFoto" type="button">
+            <i class="fa-solid fa-camera"></i> Capturar Foto
+          </button>
+          <button class="photoBtnSecondary" id="btnGaleria" type="button">
+            <i class="fa-solid fa-images"></i> Galeria
+          </button>
+          <span class="photoCount"><span id="photoCount">0</span> / 30</span>
+        </div>
+
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple style="display:none;">
+        <input type="file" id="galleryInput" accept="image/*" multiple style="display:none;">
+
+        <div class="emptyPhotos" id="emptyPhotos">
+          <i class="fa-regular fa-image" style="font-size:28px; display:block; margin-bottom:8px;"></i>
+          Nenhuma foto adicionada. Capture ou importe da galeria.
+        </div>
+        <div class="photoGrid" id="photoGrid" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 05: Ratings -->
+    <div class="section">
+      <div class="sectionHeader">
+        <span class="sectionBadge">05/06</span>
+        <span class="sectionTitle">Avaliação</span>
+        <i class="fa-solid fa-star sectionIcon"></i>
+      </div>
+      <div class="sectionBody">
+        <div class="ratingActivate" id="ratingActivateBox">
+          <p>A avaliação é opcional. Ative para registrar a pontuação de desempenho.</p>
+          <button class="btnActivate" id="btnAtivarAvaliacao" type="button">
+            <i class="fa-solid fa-star"></i> Ativar Avaliação
+          </button>
+        </div>
+        <div class="ratingGroups" id="ratingGroups" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- SECTION 06: Signature -->
+    <div class="section">
+      <div class="sectionHeader">
+        <span class="sectionBadge">06/06</span>
+        <span class="sectionTitle">Assinatura Digital</span>
+        <i class="fa-solid fa-signature sectionIcon"></i>
+      </div>
+      <div class="sectionBody">
+        <div class="signatureActivate" id="signatureNeedsRating">
+          <p>Ative a avaliação (seção 05) para habilitar a assinatura.</p>
+        </div>
+        <div class="signatureActivate" id="signatureActivateBox" style="display:none;">
+          <p>Ative a assinatura digital do responsável para finalizar a ficha.</p>
+          <button class="btnActivate" id="btnAtivarAssinatura" type="button">
+            <i class="fa-solid fa-pen-nib"></i> Ativar Assinatura
+          </button>
+        </div>
+        <div class="signatureWrapper" id="signatureWrapper" style="display:none;">
+          <canvas class="signatureCanvas" id="signatureCanvas"></canvas>
+          <div class="signatureBtns" id="signatureBtns">
+            <button class="btnClear" id="btnLimparAssinatura" type="button">
+              <i class="fa-solid fa-rotate-left"></i> Limpar
+            </button>
+            <button class="btnConfirm" id="btnConfirmarAssinatura" type="button">
+              <i class="fa-solid fa-check"></i> Confirmar Assinatura
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Generate PDF -->
+    <div class="pdfSection">
+      <button class="btnPdf" id="btnGerarPdf" type="button">
+        <i class="fa-solid fa-file-export" id="btnGerarPdfIcon"></i>
+        <span id="btnGerarPdfText">Gerar &amp; Compartilhar PDF</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" style="display:none;"></div>
+
+  <!-- Tooltip -->
+  <div class="tooltip" id="tooltip" style="display:none;"></div>
+
+  <!-- Lightbox -->
+  <div class="lightboxOverlay" id="lightboxOverlay" style="display:none;">
+    <div class="lightboxContent" id="lightboxContent">
+      <button class="lightboxClose" id="lightboxClose"><i class="fa-solid fa-xmark"></i></button>
+      <img class="lightboxImg" id="lightboxImg" src="" alt="Foto">
+      <div class="lightboxNav">
+        <button class="lightboxNavBtn" id="lightboxPrev"><i class="fa-solid fa-chevron-left"></i> Anterior</button>
+        <span class="lightboxIndex" id="lightboxIndexLabel">1 / 1</span>
+        <button class="lightboxNavBtn" id="lightboxNext">Próxima <i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============================================================
+     THEME (claro / escuro) — persistido em localStorage
+     ============================================================ */
+  const root = document.documentElement;
+  const themeBtn = document.getElementById('themeToggleBtn');
+  const themeIcon = document.getElementById('themeIcon');
+
+  function applyTheme(theme) {
+    root.setAttribute('data-theme', theme);
+    themeIcon.className = theme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+    themeBtn.title = 'Ativar tema ' + (theme === 'dark' ? 'claro' : 'escuro');
+    try { localStorage.setItem('theme', theme); } catch (e) {}
+  }
+
+  let currentTheme = 'dark';
+  try { currentTheme = localStorage.getItem('theme') || 'dark'; } catch (e) {}
+  applyTheme(currentTheme);
+
+  themeBtn.addEventListener('click', function () {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(currentTheme);
+  });
+
+  /* ============================================================
+     VIEW NAVIGATION (Home <-> Ficha Fiscal)
+     ============================================================ */
+  const viewHome = document.getElementById('view-home');
+  const viewFiscal = document.getElementById('view-fiscal');
+
+  function showView(name) {
+    viewHome.classList.toggle('active', name === 'home');
+    viewFiscal.classList.toggle('active', name === 'fiscal');
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById('btnIniciarVistoria').addEventListener('click', function () {
+    showView('fiscal');
+  });
+  document.getElementById('btnVoltarHome').addEventListener('click', function () {
+    if (isDirty && !window.confirm('Existem dados não salvos na ficha. Deseja realmente voltar?')) return;
+    showView('home');
+  });
+
+  /* ============================================================
+     CONSTANTS
+     ============================================================ */
+  const MAX_PHOTOS = 30;
+  const MAX_CHARS = 3000;
+
+  const TECHNICIANS = [
+    'Anderson Silva', 'Bruno Oliveira', 'Carlos Santos', 'Diego Ferreira',
+    'Eduardo Costa', 'Felipe Alves', 'Gabriel Lima', 'Henrique Souza',
+    'Igor Martins', 'João Paulo', 'Lucas Rodrigues',
+  ];
+
+  const CHECKLIST_ITEMS = [
+    { id: 'c01', label: 'Acomodação da fibra na CTO', tooltip: 'Verificar se a caixa está com splitter instalado corretamente (OK) ou se está organizada com rolinho e plaqueta de identificação.' },
+    { id: 'c02', label: 'Identificação do DROP', tooltip: 'Verificar se o cabo do cliente está identificado com anilha numerada ou com lacre de identificação.' },
+    { id: 'c03', label: 'CTO correta conforme projeto', tooltip: 'Verificar se a caixa utilizada é a mesma registrada no sistema — ou seja, a CTO que consta na facilidade do cliente.' },
+    { id: 'c04', label: 'Identificação da CTO', tooltip: 'Verificar se o cliente está na porta correta da CTO, conforme registrado no sistema.' },
+    { id: 'c05', label: 'Organização interna da CTO', tooltip: 'Verificar se não há pontas de cabo cortado soltas dentro da caixa e se não existem conectores de cabos abandonados no interior.' },
+    { id: 'c06', label: 'Trajeto do DROP', tooltip: 'Verificar se o cabo DROP está posicionado com cunhas altas e nos suportes dos postes ao longo de todo o trajeto.' },
+    { id: 'c07', label: 'Fixação em fachada', tooltip: 'Verificar se a fixação na fachada está realizada com suporte DM ou com PTR (presilha tipo roldana).' },
+    { id: 'c08', label: 'Entrada do cabo na residência', tooltip: 'Verificar se o cabo está completamente fixado na residência, sem pontos soltos ou mal presos.' },
+    { id: 'c09', label: 'Instalação do PTO ou Alta Fusão', tooltip: 'Verificar conforme o tipo de visita: se for visita de fiscalização feita diretamente ao cliente, conferir a instalação do PTO ou da alta fusão no local.' },
+    { id: 'c10', label: 'Teste WiFi e IPv6', tooltip: 'Verificar conforme a situação: se a visita for acompanhada do técnico, realizar o teste no local; se for visita de auditoria, verificar os resultados no sistema.' },
+    { id: 'c11', label: 'Parâmetros da fibra', tooltip: 'Verificar conforme a situação: se a visita for com o técnico no local, conferir os parâmetros presencialmente; se for auditoria, verificar no sistema.' },
+    { id: 'c12', label: 'Cliente orientado sobre WiFi', tooltip: 'Verificar somente em visitas realizadas com o técnico presente: confirmar se o cliente foi devidamente orientado sobre o uso e configurações do WiFi.' },
+    { id: 'c13', label: 'Organização geral da instalação', tooltip: 'Verificar se o cabo está fixado corretamente na residência do cliente e se a caixa está organizada — sem folgas, sem excesso de cabo e sem bagunça.' },
+    { id: 'c14', label: 'Uso de EPI pelo técnico', tooltip: 'Verificar somente quando a visita for realizada com o técnico no local: confirmar se o técnico está utilizando os Equipamentos de Proteção Individual necessários.' },
+    { id: 'c15', label: 'Registro fotográfico', tooltip: 'Verificar somente em visitas de auditoria: conferir no sistema de arquivos do cliente se as fotos estão registradas na ordem correta e completas.' },
+    { id: 'c16', label: 'Qualidade final da instalação', tooltip: 'Verificar se não há lixo ou resíduos na porta do cliente nem no caminho até a caixa CTO — a área deve estar limpa após a execução do serviço.' },
+  ];
+
+  /* ============================================================
+     STATE
+     ============================================================ */
+  let clientName = '', technicianName = '', fiscalName = '';
+  let visitDate = (function () {
+    const now = new Date();
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    return now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+  })();
+
+  let gpsAddress = 'Clique para obter localização';
+  let gpsCoords = null;
+  let gpsLoading = false;
+
+  const checklist = {};
+  CHECKLIST_ITEMS.forEach(function (item) { checklist[item.id] = null; });
+
+  let observations = '';
+  let photos = []; // {id, dataUrl, timestamp, address, fromCamera, comentario}
+
+  let ratingEnabled = false;
+  const ratings = { empresa: 0, suporte: 0, tecnico: 0 };
+
+  let signatureEnabled = false;
+  let signatureConfirmed = false;
+  let signatureDataUrl = null;
+
+  let isDirty = false;
+  let isGenerating = false;
+  let lightboxIndex = null;
+  let toastTimer = null;
+
+  /* ============================================================
+     HELPERS
+     ============================================================ */
+  function formatDate(d) {
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function sanitizeFilename(text) {
+    return text
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .substring(0, 30);
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function (e) { resolve(e.target.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function addPhotoOverlay(dataUrl, timestamp, address) {
+    return new Promise(function (resolve) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        const barH = Math.max(56, img.height * 0.09);
+        ctx.fillStyle = 'rgba(0,0,0,0.68)';
+        ctx.fillRect(0, img.height - barH, img.width, barH);
+
+        const fs = Math.max(14, Math.round(img.width * 0.026));
+        ctx.font = 'bold ' + fs + 'px monospace';
+        ctx.fillStyle = '#E50012';
+        ctx.fillText(timestamp, 12, img.height - barH + fs + 6);
+
+        ctx.font = Math.round(fs * 0.82) + 'px monospace';
+        ctx.fillStyle = '#FFFFFF';
+        const addr = address.length > 70 ? address.substring(0, 67) + '...' : address;
+        ctx.fillText(addr, 12, img.height - barH + fs * 2 + 10);
+
+        resolve(canvas.toDataURL('image/jpeg', 0.86));
+      };
+      img.onerror = function () { resolve(dataUrl); };
+      img.src = dataUrl;
+    });
+  }
+
+  function setDirty() { isDirty = true; }
+
+  window.addEventListener('beforeunload', function (e) {
+    if (isDirty) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  /* ============================================================
+     TOAST
+     ============================================================ */
+  const toastEl = document.getElementById('toast');
+  function showToast(message, type) {
+    type = type || 'info';
+    const iconClass = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-circle-info';
+    toastEl.innerHTML = '<i class="fa-solid ' + iconClass + '"></i> ' + message;
+    toastEl.className = 'toast ' + type;
+    toastEl.style.display = 'flex';
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.style.display = 'none'; }, 3500);
+  }
+
+  /* ============================================================
+     GPS
+     ============================================================ */
+  const gpsBar = document.getElementById('gpsBar');
+  const gpsIcon = document.getElementById('gpsIcon');
+  const gpsPulse = document.getElementById('gpsPulse');
+  const gpsTextEl = document.getElementById('gpsText');
+  const gpsCoordsEl = document.getElementById('gpsCoords');
+
+  function renderGps() {
+    gpsTextEl.textContent = gpsAddress;
+    if (gpsLoading) {
+      gpsIcon.className = 'fa-solid fa-spinner gpsIcon loading';
+      gpsPulse.style.display = 'none';
+    } else {
+      gpsIcon.className = 'fa-solid fa-location-dot gpsIcon';
+      gpsPulse.style.display = 'inline-block';
+    }
+    if (gpsCoords) {
+      gpsCoordsEl.style.display = 'inline';
+      gpsCoordsEl.textContent = gpsCoords.lat.toFixed(4) + ', ' + gpsCoords.lng.toFixed(4);
+    } else {
+      gpsCoordsEl.style.display = 'none';
+    }
+  }
+
+  function fetchGPS() {
+    if (!navigator.geolocation) {
+      showToast('Geolocalização não suportada neste dispositivo.', 'error');
+      return;
+    }
+    gpsLoading = true;
+    gpsAddress = 'Obtendo localização...';
+    renderGps();
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        const lat = pos.coords.latitude, lng = pos.coords.longitude;
+        gpsCoords = { lat: lat, lng: lng };
+        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng, { headers: { 'Accept-Language': 'pt-BR' } })
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            gpsAddress = data.display_name || (lat.toFixed(5) + ', ' + lng.toFixed(5));
+            showToast('Localização obtida com sucesso!', 'success');
+          })
+          .catch(function () {
+            gpsAddress = lat.toFixed(5) + ', ' + lng.toFixed(5);
+          })
+          .finally(function () {
+            gpsLoading = false;
+            renderGps();
+          });
+      },
+      function () {
+        gpsAddress = 'Não foi possível obter a localização';
+        gpsLoading = false;
+        renderGps();
+        showToast('Erro ao acessar GPS. Verifique as permissões.', 'error');
+      },
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  }
+
+  gpsBar.addEventListener('click', fetchGPS);
+
+  /* ============================================================
+     VISIT DATA INPUTS
+     ============================================================ */
+  const techListEl = document.getElementById('technicians-list');
+  TECHNICIANS.forEach(function (t) {
+    const opt = document.createElement('option');
+    opt.value = t;
+    techListEl.appendChild(opt);
+  });
+
+  const clientNameInput = document.getElementById('clientName');
+  const technicianNameInput = document.getElementById('technicianName');
+  const fiscalNameInput = document.getElementById('fiscalName');
+  const visitDateInput = document.getElementById('visitDate');
+  visitDateInput.value = visitDate;
+
+  clientNameInput.addEventListener('input', function (e) { clientName = e.target.value; setDirty(); });
+  technicianNameInput.addEventListener('input', function (e) { technicianName = e.target.value; setDirty(); });
+  fiscalNameInput.addEventListener('input', function (e) { fiscalName = e.target.value; setDirty(); });
+  visitDateInput.addEventListener('input', function (e) { visitDate = e.target.value; setDirty(); });
+
+  /* ============================================================
+     CHECKLIST
+     ============================================================ */
+  const checklistItemsEl = document.getElementById('checklistItems');
+  const scoreValueEl = document.getElementById('scoreValue');
+  const scoreBarFillEl = document.getElementById('scoreBarFill');
+  const countSimEl = document.getElementById('countSim');
+  const countNaoEl = document.getElementById('countNao');
+  const countNaEl = document.getElementById('countNa');
+
+  function computeScore() {
+    let sim = 0, nao = 0, na = 0;
+    Object.keys(checklist).forEach(function (k) {
+      const v = checklist[k];
+      if (v === 'Sim') sim++; else if (v === 'Não') nao++; else if (v === 'N/A') na++;
+    });
+    const applicable = sim + nao;
+    const pct = applicable > 0 ? Math.round((sim / applicable) * 100) : 0;
+    const level = pct >= 80 ? 'high' : pct >= 60 ? 'mid' : 'low';
+    return { sim: sim, nao: nao, na: na, pct: pct, level: level };
+  }
+
+  function renderScore() {
+    const s = computeScore();
+    scoreValueEl.textContent = s.pct + '%';
+    scoreValueEl.className = 'scoreValue ' + s.level;
+    scoreBarFillEl.style.width = s.pct + '%';
+    scoreBarFillEl.className = 'scoreBarFill ' + s.level;
+    countSimEl.textContent = s.sim;
+    countNaoEl.textContent = s.nao;
+    countNaEl.textContent = s.na;
+    return s;
+  }
+
+  function statusClassFor(val) {
+    if (val === 'Sim') return 'conforming';
+    if (val === 'Não') return 'nonConforming';
+    if (val === 'N/A') return 'notApplicable';
+    return '';
+  }
+
+  function renderChecklist() {
+    checklistItemsEl.innerHTML = '';
+    CHECKLIST_ITEMS.forEach(function (item, idx) {
+      const val = checklist[item.id];
+      const row = document.createElement('div');
+      row.className = 'checklistItem ' + statusClassFor(val);
+
+      const num = document.createElement('span');
+      num.className = 'checklistNum';
+      num.textContent = String(idx + 1).padStart(2, '0');
+
+      const label = document.createElement('span');
+      label.className = 'checklistLabel';
+      label.textContent = item.label;
+
+      const tooltipBtn = document.createElement('button');
+      tooltipBtn.type = 'button';
+      tooltipBtn.className = 'checklistTooltipBtn';
+      tooltipBtn.setAttribute('aria-label', 'Info');
+      tooltipBtn.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+      tooltipBtn.addEventListener('mouseenter', function (e) { showTooltip(e, item.tooltip); });
+      tooltipBtn.addEventListener('mouseleave', hideTooltip);
+      tooltipBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        showTooltip(e, item.tooltip);
+        setTimeout(hideTooltip, 3000);
+      });
+
+      const btnsWrap = document.createElement('div');
+      btnsWrap.className = 'checklistBtns';
+      ['Sim', 'Não', 'N/A'].forEach(function (v) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn';
+        if (val === v) {
+          b.className += v === 'Sim' ? ' simActive' : v === 'Não' ? ' naoActive' : ' naActive';
+        }
+        b.textContent = v;
+        b.addEventListener('click', function () {
+          checklist[item.id] = (checklist[item.id] === v) ? null : v;
+          setDirty();
+          renderChecklist();
+          renderScore();
+        });
+        btnsWrap.appendChild(b);
+      });
+
+      row.appendChild(num);
+      row.appendChild(label);
+      row.appendChild(tooltipBtn);
+      row.appendChild(btnsWrap);
+      checklistItemsEl.appendChild(row);
+    });
+  }
+
+  /* ============================================================
+     TOOLTIP
+     ============================================================ */
+  const tooltipEl = document.getElementById('tooltip');
+  function showTooltip(e, text) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    let x = rect.left + rect.width / 2;
+    let y = rect.top - 8;
+    if (x > window.innerWidth - 140) x = window.innerWidth - 150;
+    if (x < 10) x = 10;
+    tooltipEl.textContent = text;
+    tooltipEl.style.left = x + 'px';
+    tooltipEl.style.top = y + 'px';
+    tooltipEl.style.transform = 'translate(-50%, -100%)';
+    tooltipEl.style.display = 'block';
+  }
+  function hideTooltip() { tooltipEl.style.display = 'none'; }
+
+  /* ============================================================
+     OBSERVATIONS
+     ============================================================ */
+  const obsTextarea = document.getElementById('observations');
+  const charCounterEl = document.getElementById('charCounter');
+  obsTextarea.addEventListener('input', function (e) {
+    observations = e.target.value;
+    setDirty();
+    renderCharCounter();
+  });
+  function renderCharCounter() {
+    const len = observations.length;
+    charCounterEl.textContent = len + ' / ' + MAX_CHARS;
+    charCounterEl.className = 'charCounter' + (len >= MAX_CHARS ? ' limit' : len >= MAX_CHARS * 0.85 ? ' warn' : '');
+  }
+
+  /* ============================================================
+     PHOTOS
+     ============================================================ */
+  const cameraInput = document.getElementById('cameraInput');
+  const galleryInput = document.getElementById('galleryInput');
+  const photoGridEl = document.getElementById('photoGrid');
+  const emptyPhotosEl = document.getElementById('emptyPhotos');
+  const photoCountEl = document.getElementById('photoCount');
+  const btnCapturarFoto = document.getElementById('btnCapturarFoto');
+  const btnGaleria = document.getElementById('btnGaleria');
+
+  btnCapturarFoto.addEventListener('click', function () { cameraInput.click(); });
+  btnGaleria.addEventListener('click', function () { galleryInput.click(); });
+
+  function renderPhotoButtonsState() {
+    const atLimit = photos.length >= MAX_PHOTOS;
+    btnCapturarFoto.disabled = atLimit;
+    btnGaleria.disabled = atLimit;
+    photoCountEl.textContent = photos.length;
+  }
+
+  function renderPhotos() {
+    renderPhotoButtonsState();
+    if (photos.length === 0) {
+      emptyPhotosEl.style.display = 'block';
+      photoGridEl.style.display = 'none';
+      photoGridEl.innerHTML = '';
+      return;
+    }
+    emptyPhotosEl.style.display = 'none';
+    photoGridEl.style.display = 'grid';
+    photoGridEl.innerHTML = '';
+
+    photos.forEach(function (photo, idx) {
+      const item = document.createElement('div');
+      item.className = 'photoItem';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'photoThumb';
+      thumb.addEventListener('click', function () { openLightbox(idx); });
+
+      const img = document.createElement('img');
+      img.src = photo.dataUrl;
+      img.alt = 'Foto ' + (idx + 1);
+      thumb.appendChild(img);
+
+      if (photo.fromCamera) {
+        const tag = document.createElement('span');
+        tag.className = 'photoCameraTag';
+        tag.innerHTML = '<i class="fa-solid fa-camera"></i> CAM';
+        thumb.appendChild(tag);
+      }
+
+      const overlay = document.createElement('div');
+      overlay.className = 'photoOverlay';
+      overlay.addEventListener('click', function (e) { e.stopPropagation(); });
+
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'photoOverlayBtn';
+      viewBtn.title = 'Visualizar';
+      viewBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+      viewBtn.addEventListener('click', function () { openLightbox(idx); });
+
+      const pdfBtn = document.createElement('button');
+      pdfBtn.className = 'photoOverlayBtn';
+      pdfBtn.title = 'Download PDF';
+      pdfBtn.innerHTML = '<i class="fa-solid fa-file-pdf"></i>';
+      pdfBtn.addEventListener('click', function () { downloadSinglePhotoPdf(photo); });
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'photoOverlayBtn';
+      delBtn.title = 'Excluir';
+      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      delBtn.addEventListener('click', function () { deletePhoto(photo.id); });
+
+      overlay.appendChild(viewBtn);
+      overlay.appendChild(pdfBtn);
+      overlay.appendChild(delBtn);
+      thumb.appendChild(overlay);
+
+      const comment = document.createElement('textarea');
+      comment.className = 'photoCommentInput';
+      comment.placeholder = 'Comentário / observação...';
+      comment.rows = 2;
+      comment.value = photo.comentario;
+      comment.addEventListener('click', function (e) { e.stopPropagation(); });
+      comment.addEventListener('input', function (e) {
+        photo.comentario = e.target.value;
+        setDirty();
+      });
+
+      item.appendChild(thumb);
+      item.appendChild(comment);
+      photoGridEl.appendChild(item);
+    });
+  }
+
+  function deletePhoto(id) {
+    photos = photos.filter(function (p) { return p.id !== id; });
+    if (lightboxIndex !== null) closeLightbox();
+    setDirty();
+    renderPhotos();
+    showToast('Foto removida.', 'info');
+  }
+
+  cameraInput.addEventListener('change', function (e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) {
+      showToast('Limite de ' + MAX_PHOTOS + ' fotos atingido.', 'error');
+      e.target.value = '';
+      return;
+    }
+    const toProcess = files.slice(0, remaining);
+    const timestamp = formatDate(new Date());
+    const address = gpsAddress.startsWith('Clique') ? 'Sem localização' : gpsAddress;
+
+    Promise.all(toProcess.map(function (file) {
+      return readFileAsDataUrl(file).then(function (raw) {
+        return addPhotoOverlay(raw, timestamp, address);
+      }).then(function (withOverlay) {
+        return {
+          id: 'cam_' + Date.now() + '_' + Math.random(),
+          dataUrl: withOverlay,
+          timestamp: timestamp,
+          address: address,
+          fromCamera: true,
+          comentario: '',
+        };
+      });
+    })).then(function (newPhotos) {
+      photos = photos.concat(newPhotos);
+      setDirty();
+      renderPhotos();
+      showToast(newPhotos.length + ' foto(s) adicionada(s) com overlay.', 'success');
+      e.target.value = '';
+    });
+  });
+
+  galleryInput.addEventListener('change', function (e) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) {
+      showToast('Limite de ' + MAX_PHOTOS + ' fotos atingido.', 'error');
+      e.target.value = '';
+      return;
+    }
+    const toProcess = files.slice(0, remaining);
+
+    Promise.all(toProcess.map(function (file) {
+      return readFileAsDataUrl(file).then(function (dataUrl) {
+        return {
+          id: 'gal_' + Date.now() + '_' + Math.random(),
+          dataUrl: dataUrl,
+          timestamp: formatDate(new Date()),
+          address: '',
+          fromCamera: false,
+          comentario: '',
+        };
+      });
+    })).then(function (newPhotos) {
+      photos = photos.concat(newPhotos);
+      setDirty();
+      renderPhotos();
+      showToast(newPhotos.length + ' foto(s) carregada(s).', 'success');
+      e.target.value = '';
+    });
+  });
+
+  function downloadSinglePhotoPdf(photo) {
+    const jsPDFCtor = window.jspdf.jsPDF;
+    const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pW = doc.internal.pageSize.getWidth();
+    const margin = 14;
+    doc.setFontSize(10);
+    doc.setTextColor(229, 0, 18);
+    doc.text('SILVERNET — Registro Fotográfico', margin, 16);
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(photo.timestamp + (photo.address ? ' · ' + photo.address : ''), margin, 22);
+    const imgW = pW - margin * 2;
+    const img = new Image();
+    img.onload = function () {
+      const aspect = img.naturalHeight / img.naturalWidth;
+      const imgH = imgW * aspect;
+      doc.addImage(photo.dataUrl, 'JPEG', margin, 28, imgW, imgH, undefined, 'NONE');
+      let y = 28 + imgH + 8;
+      if (photo.comentario && photo.comentario.trim()) {
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        const lines = doc.splitTextToSize('Observação: ' + photo.comentario, imgW);
+        doc.text(lines, margin, y);
+      }
+      doc.save('foto_' + photo.id.substring(0, 12) + '.pdf');
+      showToast('PDF da foto gerado!', 'success');
+    };
+    img.onerror = function () { showToast('Erro ao gerar PDF da foto.', 'error'); };
+    img.src = photo.dataUrl;
+  }
+
+  /* ============================================================
+     LIGHTBOX
+     ============================================================ */
+  const lightboxOverlayEl = document.getElementById('lightboxOverlay');
+  const lightboxImgEl = document.getElementById('lightboxImg');
+  const lightboxIndexLabelEl = document.getElementById('lightboxIndexLabel');
+  const lightboxPrevBtn = document.getElementById('lightboxPrev');
+  const lightboxNextBtn = document.getElementById('lightboxNext');
+
+  function openLightbox(idx) {
+    lightboxIndex = idx;
+    renderLightbox();
+    lightboxOverlayEl.style.display = 'flex';
+  }
+  function closeLightbox() {
+    lightboxIndex = null;
+    lightboxOverlayEl.style.display = 'none';
+  }
+  function renderLightbox() {
+    if (lightboxIndex === null || !photos[lightboxIndex]) { closeLightbox(); return; }
+    const photo = photos[lightboxIndex];
+    lightboxImgEl.src = photo.dataUrl;
+    lightboxImgEl.alt = 'Foto ' + (lightboxIndex + 1);
+    lightboxIndexLabelEl.textContent = (lightboxIndex + 1) + ' / ' + photos.length;
+    lightboxPrevBtn.disabled = lightboxIndex === 0;
+    lightboxNextBtn.disabled = lightboxIndex === photos.length - 1;
+  }
+  lightboxOverlayEl.addEventListener('click', function (e) {
+    if (e.target === lightboxOverlayEl) closeLightbox();
+  });
+  document.getElementById('lightboxContent').addEventListener('click', function (e) { e.stopPropagation(); });
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightboxPrevBtn.addEventListener('click', function () { if (lightboxIndex > 0) { lightboxIndex--; renderLightbox(); } });
+  lightboxNextBtn.addEventListener('click', function () { if (lightboxIndex < photos.length - 1) { lightboxIndex++; renderLightbox(); } });
+
+  /* ============================================================
+     RATINGS
+     ============================================================ */
+  const ratingActivateBox = document.getElementById('ratingActivateBox');
+  const ratingGroupsEl = document.getElementById('ratingGroups');
+  const btnAtivarAvaliacao = document.getElementById('btnAtivarAvaliacao');
+  const signatureNeedsRating = document.getElementById('signatureNeedsRating');
+  const signatureActivateBox = document.getElementById('signatureActivateBox');
+
+  const RATING_GROUPS = [
+    { key: 'empresa', label: 'Empresa' },
+    { key: 'suporte', label: 'Suporte' },
+    { key: 'tecnico', label: 'Técnico' },
+  ];
+
+  let hoverRating = { empresa: 0, suporte: 0, tecnico: 0 };
+
+  btnAtivarAvaliacao.addEventListener('click', function () {
+    ratingEnabled = true;
+    renderRatingSection();
+    renderSignatureGate();
+  });
+
+  function renderRatingSection() {
+    if (!ratingEnabled) {
+      ratingActivateBox.style.display = 'flex';
+      ratingGroupsEl.style.display = 'none';
+      return;
+    }
+    ratingActivateBox.style.display = 'none';
+    ratingGroupsEl.style.display = 'flex';
+    ratingGroupsEl.innerHTML = '';
+
+    RATING_GROUPS.forEach(function (g) {
+      const group = document.createElement('div');
+      group.className = 'ratingGroup';
+
+      const title = document.createElement('div');
+      title.className = 'ratingGroupTitle';
+      title.textContent = g.label;
+
+      const starsWrap = document.createElement('div');
+      starsWrap.className = 'stars';
+      for (let star = 1; star <= 10; star++) {
+        const s = document.createElement('span');
+        const filled = star <= (hoverRating[g.key] || ratings[g.key]);
+        const isHover = hoverRating[g.key] > 0 && star <= hoverRating[g.key];
+        s.className = 'star' + (filled ? ' filled' : '') + (isHover ? ' hover' : '');
+        s.textContent = '★';
+        s.setAttribute('role', 'button');
+        s.setAttribute('tabindex', '0');
+        s.setAttribute('aria-label', star + ' estrelas');
+        s.addEventListener('mouseenter', function () { hoverRating[g.key] = star; renderRatingSection(); });
+        s.addEventListener('mouseleave', function () { hoverRating[g.key] = 0; renderRatingSection(); });
+        s.addEventListener('click', function () { ratings[g.key] = star; setDirty(); renderRatingSection(); });
+        s.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { ratings[g.key] = star; setDirty(); renderRatingSection(); }
+        });
+        starsWrap.appendChild(s);
+      }
+
+      const valEl = document.createElement('div');
+      valEl.className = 'ratingVal';
+      if (ratings[g.key] > 0) {
+        valEl.innerHTML = 'Nota: <span>' + ratings[g.key] + '</span>/10';
+      } else {
+        valEl.textContent = 'Sem avaliação';
+      }
+
+      group.appendChild(title);
+      group.appendChild(starsWrap);
+      group.appendChild(valEl);
+      ratingGroupsEl.appendChild(group);
+    });
+  }
+
+  /* ============================================================
+     SIGNATURE
+     ============================================================ */
+  const signatureWrapperEl = document.getElementById('signatureWrapper');
+  const signatureCanvas = document.getElementById('signatureCanvas');
+  const signatureBtnsEl = document.getElementById('signatureBtns');
+  const btnAtivarAssinatura = document.getElementById('btnAtivarAssinatura');
+
+  let isDrawing = false;
+  let lastPos = { x: 0, y: 0 };
+  const sigCtx = signatureCanvas.getContext('2d');
+
+  function renderSignatureGate() {
+    if (!ratingEnabled) {
+      signatureNeedsRating.style.display = 'flex';
+      signatureActivateBox.style.display = 'none';
+      signatureWrapperEl.style.display = 'none';
+    } else if (!signatureEnabled) {
+      signatureNeedsRating.style.display = 'none';
+      signatureActivateBox.style.display = 'flex';
+      signatureWrapperEl.style.display = 'none';
+    } else {
+      signatureNeedsRating.style.display = 'none';
+      signatureActivateBox.style.display = 'none';
+      signatureWrapperEl.style.display = 'flex';
+      setTimeout(initSignatureCanvas, 50);
+    }
+  }
+
+  btnAtivarAssinatura.addEventListener('click', function () {
+    signatureEnabled = true;
+    renderSignatureGate();
+  });
+
+  function initSignatureCanvas() {
+    signatureCanvas.width = signatureCanvas.offsetWidth || 600;
+    signatureCanvas.height = signatureCanvas.offsetHeight || 180;
+    sigCtx.fillStyle = '#FFFFFF';
+    sigCtx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+    sigCtx.strokeStyle = '#333333';
+    sigCtx.lineWidth = 2;
+    sigCtx.lineCap = 'round';
+    sigCtx.lineJoin = 'round';
+  }
+
+  window.addEventListener('resize', function () {
+    if (signatureEnabled && !signatureConfirmed) initSignatureCanvas();
+  });
+
+  function getSignaturePos(e) {
+    const rect = signatureCanvas.getBoundingClientRect();
+    const scaleX = signatureCanvas.width / rect.width;
+    const scaleY = signatureCanvas.height / rect.height;
+    const src = (e.touches && e.touches.length > 0) ? e.touches[0] : e;
+    return { x: (src.clientX - rect.left) * scaleX, y: (src.clientY - rect.top) * scaleY };
+  }
+
+  function sigStart(e) {
+    if (signatureConfirmed) return;
+    e.preventDefault();
+    isDrawing = true;
+    lastPos = getSignaturePos(e);
+  }
+  function sigMove(e) {
+    if (!isDrawing || signatureConfirmed) return;
+    e.preventDefault();
+    const pos = getSignaturePos(e);
+    sigCtx.beginPath();
+    sigCtx.moveTo(lastPos.x, lastPos.y);
+    sigCtx.lineTo(pos.x, pos.y);
+    sigCtx.stroke();
+    lastPos = pos;
+  }
+  function sigEnd() { isDrawing = false; }
+
+  signatureCanvas.addEventListener('mousedown', sigStart);
+  signatureCanvas.addEventListener('mousemove', sigMove);
+  signatureCanvas.addEventListener('mouseup', sigEnd);
+  signatureCanvas.addEventListener('mouseleave', sigEnd);
+  signatureCanvas.addEventListener('touchstart', sigStart);
+  signatureCanvas.addEventListener('touchmove', sigMove);
+  signatureCanvas.addEventListener('touchend', sigEnd);
+
+  function clearSignature() {
+    signatureConfirmed = false;
+    signatureDataUrl = null;
+    signatureCanvas.className = 'signatureCanvas';
+    renderSignatureButtons();
+    setTimeout(initSignatureCanvas, 20);
+  }
+
+  function confirmSignature() {
+    signatureDataUrl = signatureCanvas.toDataURL('image/png');
+    signatureConfirmed = true;
+    signatureCanvas.className = 'signatureCanvas confirmed';
+    renderSignatureButtons();
+    showToast('Assinatura confirmada!', 'success');
+  }
+
+  function renderSignatureButtons() {
+    signatureBtnsEl.innerHTML = '';
+    if (!signatureConfirmed) {
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'btnClear';
+      clearBtn.type = 'button';
+      clearBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Limpar';
+      clearBtn.addEventListener('click', clearSignature);
+
+      const confirmBtn = document.createElement('button');
+      confirmBtn.className = 'btnConfirm';
+      confirmBtn.type = 'button';
+      confirmBtn.innerHTML = '<i class="fa-solid fa-check"></i> Confirmar Assinatura';
+      confirmBtn.addEventListener('click', confirmSignature);
+
+      signatureBtnsEl.appendChild(clearBtn);
+      signatureBtnsEl.appendChild(confirmBtn);
+    } else {
+      const badge = document.createElement('span');
+      badge.className = 'signatureConfirmedBadge';
+      badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Assinatura Confirmada';
+
+      const redoBtn = document.createElement('button');
+      redoBtn.className = 'btnClear';
+      redoBtn.type = 'button';
+      redoBtn.innerHTML = '<i class="fa-solid fa-rotate-left"></i> Refazer';
+      redoBtn.addEventListener('click', clearSignature);
+
+      signatureBtnsEl.appendChild(badge);
+      signatureBtnsEl.appendChild(redoBtn);
+    }
+  }
+  renderSignatureButtons();
+
+  /* ============================================================
+     PDF GENERATION (full report)
+     ============================================================ */
+  const btnGerarPdf = document.getElementById('btnGerarPdf');
+  const btnGerarPdfIcon = document.getElementById('btnGerarPdfIcon');
+  const btnGerarPdfText = document.getElementById('btnGerarPdfText');
+
+  function getImgDims(dataUrl) {
+    return new Promise(function (resolve) {
+      const img = new Image();
+      img.onload = function () { resolve({ w: img.naturalWidth, h: img.naturalHeight }); };
+      img.onerror = function () { resolve({ w: 4, h: 3 }); };
+      img.src = dataUrl;
+    });
+  }
+
+  async function generatePDF() {
+    isGenerating = true;
+    btnGerarPdf.disabled = true;
+    btnGerarPdfIcon.className = 'fa-solid fa-spinner fa-spin';
+    btnGerarPdfText.textContent = 'Gerando PDF...';
+    showToast('Gerando PDF...', 'info');
+
+    try {
+      const jsPDFCtor = window.jspdf.jsPDF;
+      const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pW = doc.internal.pageSize.getWidth();
+      const pH = doc.internal.pageSize.getHeight();
+      const margin = 14;
+      const s = computeScore();
+
+      function addFooter(pageNum, totalPages) {
+        doc.setFontSize(7);
+        doc.setTextColor(120, 120, 120);
+        doc.text('SilverNet Tecnologia | Ficha Fiscal Técnica | Pág. ' + pageNum + '/' + totalPages, pW / 2, pH - 6, { align: 'center' });
+        doc.setDrawColor(229, 0, 18);
+        doc.setLineWidth(0.3);
+        doc.line(margin, pH - 10, pW - margin, pH - 10);
+      }
+
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pW, pH, 'F');
+      doc.setFillColor(229, 0, 18);
+      doc.rect(0, 0, pW, 3, 'F');
+
+      doc.setFontSize(28);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(50, 50, 50);
+      doc.text('SILVERNET', pW / 2, 40, { align: 'center' });
+      doc.setTextColor(229, 0, 18);
+      doc.text('TECNOLOGIA', pW / 2, 52, { align: 'center' });
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text('FICHA FISCAL TÉCNICA', pW / 2, 63, { align: 'center' });
+
+      doc.setDrawColor(229, 0, 18);
+      doc.setLineWidth(0.5);
+      doc.line(margin + 20, 68, pW - margin - 20, 68);
+
+      const coverItems = [
+        ['Cliente', clientName || '—'],
+        ['Técnico', technicianName || '—'],
+        ['Fiscal', fiscalName || '—'],
+        ['Data', visitDate || '—'],
+        ['Localização', gpsAddress],
+        ['Conformidade', s.pct + '%'],
+      ];
+
+      let cy = 80;
+      coverItems.forEach(function (pair) {
+        const label = pair[0], value = pair[1];
+        doc.setFontSize(8);
+        doc.setTextColor(120, 120, 120);
+        doc.setFont('helvetica', 'normal');
+        doc.text(label.toUpperCase(), margin, cy);
+        doc.setFontSize(10);
+        doc.setTextColor(50, 50, 50);
+        doc.setFont('helvetica', 'bold');
+        const lines = doc.splitTextToSize(value, pW - margin * 2 - 30);
+        doc.text(lines, margin, cy + 5);
+        cy += 12 + (lines.length - 1) * 5;
+      });
+
+      if (gpsCoords) {
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(140, 140, 140);
+        doc.text('GPS: ' + gpsCoords.lat.toFixed(6) + ', ' + gpsCoords.lng.toFixed(6), margin, cy + 2);
+      }
+
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pW, pH, 'F');
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(229, 0, 18);
+      doc.text('01 — DADOS DA VISITA', margin, 20);
+
+      doc.autoTable({
+        startY: 22,
+        margin: { left: margin, right: margin },
+        body: [
+          ['Cliente', clientName || '—', 'Técnico', technicianName || '—'],
+          ['Fiscal', fiscalName || '—', 'Data', visitDate || '—'],
+        ],
+        styles: { fontSize: 15, cellPadding: 4, fillColor: [240, 240, 240], textColor: [50, 50, 50], lineColor: [200, 200, 200], lineWidth: 0.2, overflow: 'linebreak' },
+        columnStyles: {
+          0: { fontStyle: 'bold', textColor: [100, 100, 100], cellWidth: 25, fontSize: 10 },
+          1: { cellWidth: 60, fontSize: 15 },
+          2: { fontStyle: 'bold', textColor: [100, 100, 100], cellWidth: 25, fontSize: 10 },
+          3: { cellWidth: 60, fontSize: 15 },
+        },
+        theme: 'grid',
+      });
+
+      const afterVisit = doc.lastAutoTable.finalY + 6;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(229, 0, 18);
+      doc.text('02 — CHECKLIST DE CONFORMIDADE', margin, afterVisit);
+
+      const checklistBody = CHECKLIST_ITEMS.map(function (item, i) {
+        const val = checklist[item.id] || '—';
+        return [String(i + 1).padStart(2, '0'), item.label, val];
+      });
+
+      doc.autoTable({
+        startY: afterVisit + 4,
+        margin: { left: margin, right: margin },
+        head: [['#', 'Item', 'Resultado']],
+        body: checklistBody,
+        styles: { fontSize: 8, cellPadding: 2, fillColor: [245, 245, 245], textColor: [50, 50, 50], lineColor: [200, 200, 200], lineWidth: 0.2 },
+        headStyles: { fillColor: [229, 0, 18], textColor: [255, 255, 255], fontStyle: 'bold' },
+        columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 20, halign: 'center' } },
+        didParseCell: function (data) {
+          if (data.column.index === 2 && data.section === 'body') {
+            if (data.cell.raw === 'Sim') { data.cell.styles.textColor = [0, 150, 50]; data.cell.styles.fontStyle = 'bold'; }
+            else if (data.cell.raw === 'Não') { data.cell.styles.textColor = [229, 0, 18]; data.cell.styles.fontStyle = 'bold'; }
+            else if (data.cell.raw === 'N/A') { data.cell.styles.textColor = [140, 140, 140]; }
+          }
+        },
+        theme: 'grid',
+      });
+
+      const afterChecklist = doc.lastAutoTable.finalY + 5;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+      doc.text('Conformidade: ' + s.pct + '%   |   Sim: ' + s.sim + '   Não: ' + s.nao + '   N/A: ' + s.na, margin, afterChecklist);
+
+      doc.addPage();
+      doc.setFillColor(255, 255, 255);
+      doc.rect(0, 0, pW, pH, 'F');
+
+      const BODY_BOT = pH - 14;
+      const OBS_LINE_H = 8;
+
+      let y = 16;
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(229, 0, 18);
+      doc.text('03 — OBSERVAÇÕES', margin, y);
+      y += 8;
+
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(60, 60, 60);
+      const obsLines = doc.splitTextToSize(observations || 'Sem observações registradas.', pW - margin * 2);
+
+      for (let li = 0; li < obsLines.length; li++) {
+        const line = obsLines[li];
+        if (y + OBS_LINE_H > BODY_BOT) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pW, pH, 'F');
+          y = 16;
+          doc.setFontSize(20);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(60, 60, 60);
+        }
+        doc.text(line, margin, y);
+        y += OBS_LINE_H;
+      }
+      y += 8;
+
+      let currentY = y;
+
+      if (photos.length > 0) {
+        for (let i = 0; i < photos.length; i++) {
+          const photo = photos[i];
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pW, pH, 'F');
+
+          let py = 16;
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(229, 0, 18);
+          doc.text('04 — REGISTRO FOTOGRÁFICO', margin, py);
+          py += 6;
+
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(120, 120, 120);
+          doc.text('Foto ' + (i + 1) + ' de ' + photos.length + (photo.fromCamera ? ' · câmera' : ' · galeria'), margin, py);
+          py += 6;
+
+          const imgW = pW - margin * 2;
+          let aspectRatio = 0.75;
+          try {
+            const dims = await getImgDims(photo.dataUrl);
+            if (dims.w > 0) aspectRatio = dims.h / dims.w;
+          } catch (e) { /* default */ }
+
+          const comentario = (photo.comentario || '').trim();
+          const commentLines = comentario ? doc.splitTextToSize(comentario, imgW - 4) : [];
+          const COMMENT_LINE_H = 6;
+          const commentH = commentLines.length > 0 ? (commentLines.length * COMMENT_LINE_H) + 6 : 0;
+          const maxImgH = Math.max(60, pH - py - 20 - commentH);
+          const imgH = Math.min(imgW * aspectRatio, maxImgH);
+
+          try {
+            doc.addImage(photo.dataUrl, 'JPEG', margin, py, imgW, imgH, undefined, 'NONE');
+          } catch (e) {
+            doc.setFillColor(240, 240, 240);
+            doc.rect(margin, py, imgW, imgH, 'F');
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text('Imagem não disponível', margin + imgW / 2, py + imgH / 2, { align: 'center' });
+          }
+
+          py += imgH + 4;
+
+          if (commentLines.length > 0) {
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(80, 80, 80);
+            doc.text('Observação:', margin + 2, py);
+            py += COMMENT_LINE_H;
+            commentLines.forEach(function (cl) {
+              doc.text(cl, margin + 2, py);
+              py += COMMENT_LINE_H;
+            });
+          }
+
+          currentY = py;
+        }
+      }
+
+      if (ratingEnabled) {
+        const RATINGS_NEEDED = 80;
+        if (BODY_BOT - currentY < RATINGS_NEEDED) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pW, pH, 'F');
+          currentY = 16;
+        }
+
+        let ry = currentY;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(229, 0, 18);
+        doc.text('05 — AVALIAÇÃO', margin, ry);
+        ry += 8;
+
+        const ratingGroupsArr = [['Empresa', ratings.empresa], ['Suporte', ratings.suporte], ['Técnico', ratings.tecnico]];
+        ratingGroupsArr.forEach(function (pair) {
+          const label = pair[0], score = pair[1];
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(80, 80, 80);
+          doc.text(label, margin, ry);
+
+          const starSize = 5, starGap = 1;
+          let sx = margin + 35;
+          for (let st = 1; st <= 10; st++) {
+            doc.setFontSize(10);
+            doc.setTextColor(st <= score ? 255 : 150, st <= score ? 214 : 150, st <= score ? 0 : 150);
+            doc.text('★', sx, ry + 0.5);
+            sx += starSize + starGap;
+          }
+
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(229, 0, 18);
+          doc.text(score + '/10', sx + 2, ry + 0.5);
+          ry += 9;
+        });
+
+        currentY = ry + 5;
+      }
+
+      if (signatureDataUrl) {
+        const sigW = pW - margin * 2;
+        const sigH = sigW * 0.3;
+        const SIGNATURE_NEEDED = 6 + 6 + sigH + 14;
+
+        if (BODY_BOT - currentY < SIGNATURE_NEEDED) {
+          doc.addPage();
+          doc.setFillColor(255, 255, 255);
+          doc.rect(0, 0, pW, pH, 'F');
+          currentY = 16;
+        }
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(229, 0, 18);
+        doc.text('06 — ASSINATURA', margin, currentY);
+        currentY += 6;
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Assinado digitalmente em: ' + formatDate(new Date()), margin, currentY);
+        currentY += 6;
+
+        doc.addImage(signatureDataUrl, 'PNG', margin, currentY, sigW, sigH);
+
+        doc.setDrawColor(229, 0, 18);
+        doc.setLineWidth(0.3);
+        doc.line(margin, currentY + sigH + 4, pW - margin, currentY + sigH + 4);
+
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(clientName || 'Responsável', pW / 2, currentY + sigH + 10, { align: 'center' });
+      }
+
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        addFooter(p, totalPages);
+      }
+
+      const dataFormatada = visitDate ? visitDate.split('-').reverse().join('-') : new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+      const nomeTec = sanitizeFilename(technicianName) || 'Tecnico';
+      const nomeCli = sanitizeFilename(clientName) || 'Cliente';
+      const filename = 'SILVERNET_' + nomeTec + '_' + nomeCli + '_' + dataFormatada + '.pdf';
+
+      const blob = doc.output('blob');
+      const file = new File([blob], filename, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ title: filename, text: filename, files: [file] });
+        } catch (e) {
+          if (e.name !== 'AbortError') showToast('Compartilhamento cancelado.', 'error');
+        }
+      } else {
+        const desejaBaixar = window.confirm('Seu dispositivo não suporta compartilhamento direto. Deseja baixar o PDF?');
+        if (desejaBaixar) doc.save(filename);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Erro ao gerar PDF. Tente novamente.', 'error');
+    } finally {
+      isGenerating = false;
+      btnGerarPdf.disabled = false;
+      btnGerarPdfIcon.className = 'fa-solid fa-file-export';
+      btnGerarPdfText.textContent = 'Gerar & Compartilhar PDF';
+    }
+  }
+
+  btnGerarPdf.addEventListener('click', generatePDF);
+
+  /* ============================================================
+     INITIAL RENDER
+     ============================================================ */
+  renderGps();
+  renderChecklist();
+  renderScore();
+  renderCharCounter();
+  renderPhotos();
+  renderRatingSection();
+  renderSignatureGate();
+
+})();
+</script>
+</body>
+</html>
