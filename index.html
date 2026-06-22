@@ -82,6 +82,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+  text-transform: uppercase;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -1047,13 +1048,25 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
   }
 
   function sanitizeFilename(text) {
+    text = (text || '').toString().trim();
+    if (!text) return '';
     return text
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\w\s-]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')   // remove acentos
+      .replace(/[^a-zA-Z0-9\s-]/g, '')   // remove qualquer caractere especial/emoji
+      .trim()
       .replace(/\s+/g, '_')
       .replace(/_+/g, '_')
-      .substring(0, 30);
+      .replace(/^_+|_+$/g, '')           // sem underscore sobrando nas pontas
+      .substring(0, 40);
+  }
+
+  // Retorna apenas o primeiro nome, já sanitizado
+  function firstNameSanitized(fullName) {
+    const clean = (fullName || '').toString().trim();
+    if (!clean) return '';
+    const first = clean.split(/\s+/)[0];
+    return sanitizeFilename(first);
   }
 
   function readFileAsDataUrl(file) {
@@ -1097,6 +1110,35 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
   }
 
   function setDirty() { isDirty = true; }
+
+  // Cria uma instância de jsPDF cujo método .text() força maiúsculas automaticamente em qualquer string
+  function createUppercasePdf(options) {
+    const docInstance = new (window.jspdf.jsPDF)(options);
+    const originalText = docInstance.text.bind(docInstance);
+    docInstance.text = function (text, x, y, opts) {
+      if (Array.isArray(text)) {
+        text = text.map(function (t) { return typeof t === 'string' ? t.toUpperCase() : t; });
+      } else if (typeof text === 'string') {
+        text = text.toUpperCase();
+      }
+      return originalText(text, x, y, opts);
+    };
+    return docInstance;
+  }
+
+  // Converte o valor do input/textarea para maiúsculas preservando a posição do cursor
+  function forceUppercase(el) {
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const upper = el.value.toUpperCase();
+    if (upper !== el.value) {
+      el.value = upper;
+      if (start !== null && end !== null) {
+        el.setSelectionRange(start, end);
+      }
+    }
+    return el.value;
+  }
 
   window.addEventListener('beforeunload', function (e) {
     if (isDirty) { e.preventDefault(); e.returnValue = ''; }
@@ -1196,9 +1238,9 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
   const visitDateInput = document.getElementById('visitDate');
   visitDateInput.value = visitDate;
 
-  clientNameInput.addEventListener('input', function (e) { clientName = e.target.value; setDirty(); });
-  technicianNameInput.addEventListener('input', function (e) { technicianName = e.target.value; setDirty(); });
-  fiscalNameInput.addEventListener('input', function (e) { fiscalName = e.target.value; setDirty(); });
+  clientNameInput.addEventListener('input', function (e) { clientName = forceUppercase(e.target); setDirty(); });
+  technicianNameInput.addEventListener('input', function (e) { technicianName = forceUppercase(e.target); setDirty(); });
+  fiscalNameInput.addEventListener('input', function (e) { fiscalName = forceUppercase(e.target); setDirty(); });
   visitDateInput.addEventListener('input', function (e) { visitDate = e.target.value; setDirty(); });
 
   /* ============================================================
@@ -1321,7 +1363,7 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
   const obsTextarea = document.getElementById('observations');
   const charCounterEl = document.getElementById('charCounter');
   obsTextarea.addEventListener('input', function (e) {
-    observations = e.target.value;
+    observations = forceUppercase(e.target);
     setDirty();
     renderCharCounter();
   });
@@ -1418,7 +1460,7 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
       comment.value = photo.comentario;
       comment.addEventListener('click', function (e) { e.stopPropagation(); });
       comment.addEventListener('input', function (e) {
-        photo.comentario = e.target.value;
+        photo.comentario = forceUppercase(e.target);
         setDirty();
       });
 
@@ -1503,8 +1545,7 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
   });
 
   function downloadSinglePhotoPdf(photo) {
-    const jsPDFCtor = window.jspdf.jsPDF;
-    const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const doc = createUppercasePdf({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pW = doc.internal.pageSize.getWidth();
     const margin = 14;
     doc.setFontSize(10);
@@ -1801,8 +1842,7 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
     showToast('Gerando PDF...', 'info');
 
     try {
-      const jsPDFCtor = window.jspdf.jsPDF;
-      const doc = new jsPDFCtor({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const doc = createUppercasePdf({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pW = doc.internal.pageSize.getWidth();
       const pH = doc.internal.pageSize.getHeight();
       const margin = 14;
@@ -1892,6 +1932,11 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
           2: { fontStyle: 'bold', textColor: [100, 100, 100], cellWidth: 25, fontSize: 10 },
           3: { cellWidth: 60, fontSize: 15 },
         },
+        didParseCell: function (data) {
+          if (typeof data.cell.text !== 'undefined' && Array.isArray(data.cell.text)) {
+            data.cell.text = data.cell.text.map(function (t) { return String(t).toUpperCase(); });
+          }
+        },
         theme: 'grid',
       });
 
@@ -1920,6 +1965,9 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
             if (data.cell.raw === 'Sim') { data.cell.styles.textColor = [0, 150, 50]; data.cell.styles.fontStyle = 'bold'; }
             else if (data.cell.raw === 'Não') { data.cell.styles.textColor = [229, 0, 18]; data.cell.styles.fontStyle = 'bold'; }
             else if (data.cell.raw === 'N/A') { data.cell.styles.textColor = [140, 140, 140]; }
+          }
+          if (typeof data.cell.text !== 'undefined' && Array.isArray(data.cell.text)) {
+            data.cell.text = data.cell.text.map(function (t) { return String(t).toUpperCase(); });
           }
         },
         theme: 'grid',
@@ -2114,22 +2162,63 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
         addFooter(p, totalPages);
       }
 
-      const dataFormatada = visitDate ? visitDate.split('-').reverse().join('-') : new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      const nomeTec = sanitizeFilename(technicianName) || 'Tecnico';
+      // Data no formato DD-MM-AAAA, sempre válida (nunca quebra o nome do arquivo)
+      let dataFormatada;
+      if (visitDate && /^\d{4}-\d{2}-\d{2}$/.test(visitDate)) {
+        const parts = visitDate.split('-'); // [AAAA, MM, DD]
+        dataFormatada = parts[2] + '-' + parts[1] + '-' + parts[0];
+      } else {
+        const hoje = new Date();
+        const pad = function (n) { return String(n).padStart(2, '0'); };
+        dataFormatada = pad(hoje.getDate()) + '-' + pad(hoje.getMonth() + 1) + '-' + hoje.getFullYear();
+      }
+
+      const nomeTec = firstNameSanitized(technicianName) || 'Tecnico';
       const nomeCli = sanitizeFilename(clientName) || 'Cliente';
       const filename = 'SILVERNET_' + nomeTec + '_' + nomeCli + '_' + dataFormatada + '.pdf';
 
       const blob = doc.output('blob');
-      const file = new File([blob], filename, { type: 'application/pdf' });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ title: filename, text: filename, files: [file] });
-        } catch (e) {
-          if (e.name !== 'AbortError') showToast('Compartilhamento cancelado.', 'error');
+      let shared = false;
+      try {
+        const file = new File([blob], filename, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ title: filename, text: filename, files: [file] });
+            shared = true;
+          } catch (e) {
+            if (e.name !== 'AbortError') {
+              showToast('Compartilhamento cancelado. Baixando PDF...', 'info');
+            } else {
+              shared = true; // usuário cancelou intencionalmente, não força download
+            }
+          }
         }
-      } else {
-        const desejaBaixar = window.confirm('Seu dispositivo não suporta compartilhamento direto. Deseja baixar o PDF?');
-        if (desejaBaixar) doc.save(filename);
+      } catch (e) {
+        console.error('Erro no compartilhamento:', e);
+      }
+
+      if (!shared) {
+        try {
+          doc.save(filename);
+          showToast('PDF baixado: ' + filename, 'success');
+        } catch (e) {
+          console.error('Erro ao salvar PDF:', e);
+          // Fallback final: força o download via link manual, sem depender de doc.save
+          try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+            showToast('PDF baixado: ' + filename, 'success');
+          } catch (e2) {
+            console.error('Erro no fallback de download:', e2);
+            showToast('Não foi possível baixar o PDF. Tente novamente.', 'error');
+          }
+        }
       }
     } catch (err) {
       console.error(err);
