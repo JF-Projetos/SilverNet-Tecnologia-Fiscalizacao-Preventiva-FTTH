@@ -2175,7 +2175,7 @@ html[data-theme="light"] .toast.info { background: #e7f1fc; color: #1565c0; }
 
       const nomeTec = firstNameSanitized(technicianName) || 'Tecnico';
       const nomeCli = sanitizeFilename(clientName) || 'Cliente';
-      const filename = 'SILVERNET_' + nomeTec + '_' + nomeCli + '_' + dataFormatada + '.pdf';
+      const filename = nomeTec + '_' + nomeCli + '_' + dataFormatada + '.pdf';
 
       const blob = doc.output('blob');
       let shared = false;
